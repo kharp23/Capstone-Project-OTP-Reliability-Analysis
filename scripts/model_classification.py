@@ -1,6 +1,3 @@
-# Create clean binary target
-OTP_Copy["otp_binary"] = (OTP_Copy["delay_minutes"] > 0).astype(int)
-
 # Check result
 print(OTP_Copy["otp_binary"].value_counts())
 
