@@ -211,5 +211,115 @@ gb_r2 = r2_score(y_test, gb_predictions)
 
 print("Gradient Boosting Results")
 print("MAE:", gb_mae)
+
+# ==========================================================
+# REGRESSION COMPUTATIONAL COST
+# ==========================================================
+
+regression_compute_results = []
+
+regression_timing_models = {
+    "Linear Regression": Pipeline(
+        steps=[
+            ("preprocessor", clone(preprocessor)),
+            ("model", LinearRegression())
+        ]
+    ),
+
+    "Random Forest Regressor": Pipeline(
+        steps=[
+            ("preprocessor", clone(preprocessor)),
+            (
+                "model",
+                RandomForestRegressor(
+                    n_estimators=50,
+                    random_state=42,
+                    n_jobs=-1
+                )
+            )
+        ]
+    ),
+
+    "Gradient Boosting Regressor": clone(
+        gradient_boost_model
+    )
+}
+
+for model_name, timing_pipeline in regression_timing_models.items():
+
+    print(f"Measuring {model_name}...")
+
+    # Measure model training time
+    training_start = time.perf_counter()
+
+    timing_pipeline.fit(
+        X_train,
+        y_train
+    )
+
+    training_end = time.perf_counter()
+
+    training_time = (
+        training_end - training_start
+    )
+
+    # Measure prediction time
+    prediction_start = time.perf_counter()
+
+    timing_predictions = timing_pipeline.predict(
+        X_test
+    )
+
+    prediction_end = time.perf_counter()
+
+    prediction_time = (
+        prediction_end - prediction_start
+    )
+
+    # Number of predictions generated per second
+    predictions_per_second = (
+        len(X_test) / prediction_time
+        if prediction_time > 0
+        else 0
+    )
+
+    # Approximate fitted pipeline size in memory
+    model_size_mb = (
+        len(pickle.dumps(timing_pipeline))
+        / (1024 ** 2)
+    )
+
+    regression_compute_results.append(
+        {
+            "Task": "Regression",
+            "Model": model_name,
+            "Training Rows": len(X_train),
+            "Testing Rows": len(X_test),
+            "Training Time (Seconds)": training_time,
+            "Prediction Time (Seconds)": prediction_time,
+            "Predictions Per Second": predictions_per_second,
+            "Model Size (MB)": model_size_mb
+        }
+    )
+
+regression_compute_table = pd.DataFrame(
+    regression_compute_results
+)
+
+regression_compute_table = regression_compute_table.round(
+    {
+        "Training Time (Seconds)": 4,
+        "Prediction Time (Seconds)": 4,
+        "Predictions Per Second": 2,
+        "Model Size (MB)": 4
+    }
+)
+
+print("\nRegression Computational Cost")
+display(regression_compute_table)
+
+
+
+
 print("RMSE:", gb_rmse)
 print("R² Score:", gb_r2)
