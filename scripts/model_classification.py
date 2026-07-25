@@ -94,3 +94,91 @@ print("Gradient Boost Accuracy :", accuracy_score(y_test, gb_predictions))
 print("Gradient Boost Precision:", precision_score(y_test, gb_predictions))
 print("Gradient Boost Recall   :", recall_score(y_test, gb_predictions))
 print("Gradient Boost F1 Score :", f1_score(y_test, gb_predictions))
+
+
+# ==========================================================
+# CLASSIFICATION COMPUTATIONAL COST
+# ==========================================================
+
+classification_compute_results = []
+
+classification_timing_models = {
+    "Logistic Regression": clone(logistic_model),
+    "Random Forest Classifier": clone(rf_model),
+    "Gradient Boosting Classifier": clone(gb_model)
+}
+
+for model_name, timing_pipeline in classification_timing_models.items():
+
+    print(f"Measuring {model_name}...")
+
+    # Measure model training time
+    training_start = time.perf_counter()
+
+    timing_pipeline.fit(
+        X_train,
+        y_train
+    )
+
+    training_end = time.perf_counter()
+
+    training_time = (
+        training_end - training_start
+    )
+
+    # Measure prediction time
+    prediction_start = time.perf_counter()
+
+    timing_predictions = timing_pipeline.predict(
+        X_test
+    )
+
+    prediction_end = time.perf_counter()
+
+    prediction_time = (
+        prediction_end - prediction_start
+    )
+
+    # Number of predictions generated per second
+    predictions_per_second = (
+        len(X_test) / prediction_time
+        if prediction_time > 0
+        else 0
+    )
+
+    # Approximate fitted pipeline size
+    model_size_mb = (
+        len(pickle.dumps(timing_pipeline))
+        / (1024 ** 2)
+    )
+
+    classification_compute_results.append(
+        {
+            "Task": "Classification",
+            "Model": model_name,
+            "Training Rows": len(X_train),
+            "Testing Rows": len(X_test),
+            "Training Time (Seconds)": training_time,
+            "Prediction Time (Seconds)": prediction_time,
+            "Predictions Per Second": predictions_per_second,
+            "Model Size (MB)": model_size_mb
+        }
+    )
+
+classification_compute_table = pd.DataFrame(
+    classification_compute_results
+)
+
+classification_compute_table = (
+    classification_compute_table.round(
+        {
+            "Training Time (Seconds)": 4,
+            "Prediction Time (Seconds)": 4,
+            "Predictions Per Second": 2,
+            "Model Size (MB)": 4
+        }
+    )
+)
+
+print("\nClassification Computational Cost")
+display(classification_compute_table)
